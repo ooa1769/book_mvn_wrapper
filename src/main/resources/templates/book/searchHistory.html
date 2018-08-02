@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+      layout:decorator="layout">
+<head>
+    <title>최근 검색내역</title>
+</head>
+<body>
+<h2 layout:fragment="header">최근 검색내역</h2>
+<div layout:fragment="content" class="container">
+    <div class="panel-body">
+        <form class="form-inline">
+            <select id="sort" name="sort" class="span2 pull-right">
+                <option th:each="s : ${sorts}" th:value="${s.sort}" th:text="${s.displayName}"
+                        th:selected="${pageable.getSort().toString()} == ${s.sortDirection}"></option>
+            </select>
+            <br/>
+        </form>
+        <div>총 <span style="color:red" th:text="${pagingInfo.getTotalElements()}">0</span>건</div>
+        <table class="table table-bordered table-striped table-hover table-condensed">
+            <thead>
+            <tr>
+                <td class="span1">순번</td>
+                <td class="span4">검색어</td>
+                <td class="span2">날짜</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${histories.empty}">
+                <td colspan="3">검색한 내역이 없습니다.</td>
+            </tr>
+            <tr th:each="history, index : ${histories}">
+                <td th:text="${index.index + 1 + (pageable.getPageNumber() * pageable.getPageSize())}"></td>
+                <td th:text="${history.searchKeyword}"></td>
+                <td th:text="${history.formattedSearchDate}"></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="pagination pagination-centered">
+            <ul>
+                <li th:if="${pagingInfo.isPreviousVisible()}"><a th:href="${pagingInfo.startPage} - 1">&laquo;</a></li>
+                <li th:classappend="${p.isCurrentPage()} ? 'active' : '' " th:each="p:${pagingInfo.getPageElements()}">
+                    <a th:href="${p.pageNumber}" th:text="${p.pageNumber}"></a></li>
+                <li th:if="${pagingInfo.isNextVisible()}"><a th:href="${pagingInfo.endPage} + 1">&raquo;</a></li>
+            </ul>
+        </div>
+    </div>
+    <form id='pagingForm' th:action="@{/history}" method="get">
+        <input type='hidden' name='page' th:value="${pageable.getPageNumber() + 1}" />
+        <input type='hidden' name='size' th:value="${pageable.getPageSize()}" />
+        <input type='hidden' name='sort' />
+    </form>
+</div>
+</body>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            var pagingForm = $("#pagingForm");
+
+            $(".pagination a").click(function (e) {
+                e.preventDefault();
+                var page = $(this).attr('href');
+                var sort = $('#sort').val();
+                pagingForm.find('[name="page"]').val(page);
+                pagingForm.find('[name="sort"]').val(sort);
+                pagingForm.submit();
+            });
+
+            $("#sort").change(function (e) {
+                e.preventDefault();
+                var sort = $('#sort').val();
+                pagingForm.find('[name="sort"]').val(sort);
+                pagingForm.submit();
+            });
+        });
+    </script>
+</th:block>
+</html>

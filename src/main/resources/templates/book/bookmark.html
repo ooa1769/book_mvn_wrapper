@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+      layout:decorator="layout">
+<head>
+    <title>북마크</title>
+</head>
+<body>
+<h2 layout:fragment="header">북마크</h2>
+<div layout:fragment="content" class="container">
+    <div class="panel-body">
+        <form class="form-inline">
+
+            <select id="sort" name="sort" class="span2 pull-right">
+                <option th:each="s : ${sorts}" th:value="${s.sort}" th:text="${s.displayName}"
+                        th:selected="${pageable.getSort().toString()} == ${s.sortDirection}"></option>
+            </select>
+            <br/>
+        </form>
+        <div>총 <span style="color:red" th:text="${pagingInfo.getTotalElements()}">0</span>건</div>
+        <table class="table table-bordered table-striped table-hover table-condensed">
+            <thead>
+            <tr>
+                <td class="span1">순번</td>
+                <td class="span1">API 타입</td>
+                <td class="span2">isbn</td>
+                <td class="span5">책제목</td>
+                <td class="span2">날짜</td>
+                <td class="span1">삭제</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${bookmarks.empty}">
+                <td colspan="6">저장한 북마크가 없습니다.</td>
+            </tr>
+            <tr th:each="bookmark, index : ${bookmarks}">
+                <td th:text="${index.index + 1 + (pageable.getPageNumber() * pageable.getPageSize())}"></td>
+                <td th:text="${bookmark.apiType}"></td>
+                <td th:text="${bookmark.isbn}"></td>
+                <td><a class="bookLink" th:attr="url=${bookmark.url}" href="#" th:inline="text">[[${bookmark.title}]]</a></td>
+                <td th:text="${bookmark.formattedCreateDate}"></td>
+                <td><a class="btn btn-small bookMarkLink" th:attr="id=${bookmark.id}"><i class="icon-remove-circle"></i> 삭제</a></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="pagination pagination-centered">
+            <ul>
+                <li th:if="${pagingInfo.isPreviousVisible()}"><a th:href="${pagingInfo.startPage} - 1">&laquo;</a></li>
+                <li th:classappend="${p.isCurrentPage()} ? 'active' : '' " th:each="p:${pagingInfo.getPageElements()}">
+                    <a th:href="${p.pageNumber}" th:text="${p.pageNumber}"></a></li>
+                <li th:if="${pagingInfo.isNextVisible()}"><a th:href="${pagingInfo.endPage} + 1">&raquo;</a></li>
+            </ul>
+        </div>
+    </div>
+    <form id='pagingForm' th:action="@{/bookmark}" method="get">
+        <input type='hidden' name='page' th:value="${pageable.getPageNumber() + 1}" />
+        <input type='hidden' name='size' th:value="${pageable.getPageSize()}" />
+        <input type='hidden' name='sort' />
+    </form>
+</div>
+</body>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            var pagingForm = $("#pagingForm");
+
+            $(".pagination a").click(function(e) {
+                e.preventDefault();
+                var page = $(this).attr('href');
+                var sort = $('#sort').val();
+                pagingForm.find('[name="page"]').val(page);
+                pagingForm.find('[name="sort"]').val(sort);
+                pagingForm.submit();
+            });
+
+            $("#sort").change(function (e) {
+                e.preventDefault();
+                var sort = $('#sort').val();
+                pagingForm.find('[name="sort"]').val(sort);
+                pagingForm.submit();
+            });
+
+            $(".bookMarkLink").click(function(e){
+                e.preventDefault();
+                if (!confirm("북마크를 삭제하시겠습니까?")) {
+                    return;
+                }
+
+                $.ajax({
+                    type: "DELETE",
+                    url: "/api/bookmarks/" + $(this).attr("id"),
+                    success: function (result) {
+                        alert("북마크가 삭제되었습니다.");
+                        pagingForm.submit();
+                    },
+                    error: function(xhr) {
+                        console.log(xhr);
+                    }
+                });
+            });
+
+            $(".bookLink").click(function(e){
+                e.preventDefault();
+                var url = $(this).attr("url");
+                location.href = url;
+            });
+        });
+    </script>
+</th:block>
+</html>

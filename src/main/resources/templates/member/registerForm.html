@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+      layout:decorator="layout">
+<head>
+    <title>회원가입</title>
+</head>
+<body>
+<h2 layout:fragment="header">회원가입</h2>
+<div layout:fragment="content" class="container">
+    <div class="container">
+        <form class="form-horizontal" id="userForm" th:object="${memberDto}" th:action="@{/member/register}" method="post">
+            <div class="control-group">
+                <label class="control-label" for="email">Email</label>
+                <div class="controls">
+                    <input id="email" type="text" name="email" placeholder="Email" th:field="*{email}"/>
+                    <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="alert alert-error">Email Error</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="password">Password</label>
+                <div class="controls">
+                    <input id="password" type="password" name="password" placeholder="password" th:field="*{password}"/>
+                    <span th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="alert alert-error">password Error</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="name">Name</label>
+                <div class="controls">
+                    <input id="name" type="text" name="name" th:field="*{name}" placeholder="name"/>
+                    <span th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="alert alert-error">name Error</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <button type="submit" class="btn btn-primary">회원가입</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+
+        });
+    </script>
+</th:block>
+</html>

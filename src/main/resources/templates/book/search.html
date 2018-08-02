@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+      xmlns:sec="http://www.w3.org/1999/xhtml" layout:decorator="layout">
+<head>
+    <title>책 검색 서비스</title>
+</head>
+<body>
+<h2 layout:fragment="header" th:text="${apiType.name} + '책 검색'"></h2>
+<div layout:fragment="content" class="container">
+    <div class="panel-body">
+        <form class="form-inline">
+            <input type="hidden" id="apiType" th:value="${apiType.code}"></input>
+            <select id="target" name="target" class="span2">
+                <option th:each="t : ${targets}" th:value="${t.code}" th:text="${t.displayName}"
+                        th:selected="${searchOption.target} == ${t.code}"></option>
+            </select>
+
+            <select th:if="${apiType.code == 'kakao'}" id="category" name="category" class="span2">
+                <option th:each="c : ${categories}" th:value="${c.code}" th:text="${c.displayName}"
+                        th:selected="${searchOption.category} == ${c.code}"></option>
+            </select>
+            <select id="sort" name="sort" class="span2 pull-right">
+                <option th:each="s : ${sorts}" th:value="${s.code}" th:text="${s.displayName}"
+                        th:selected="${searchOption.sort} == ${s.code}"></option>
+            </select>
+            <input type='text' id='query' name='query' th:value="${searchOption.query}" class="span4"/>
+            <button class='btn' id='searchBtn'>검색</button>
+        </form>
+        <div>총 <span style="color:red" th:text="${pagingInfo.getTotalElements()}">0</span>건</div>
+        <table class="table table-bordered table-striped table-hover table-condensed">
+            <thead>
+            <tr>
+                <td class="span1">순번</td>
+                <td class="span6 center">제목</td>
+                <td class="span2">저자</td>
+                <td class="span3">출판사</td>
+                <td class="span2">출판일</td>
+                <td class="span2">가격</td>
+                <td class="span1">북마크</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${books.empty}">
+                <td colspan="7">조회 결과가 없습니다.</td>
+            </tr>
+            <tr th:each="book, index : ${books}">
+                <td th:text="${index.index + 1 + ((searchOption.page - 1) * searchOption.size)}"></td>
+                <td><a class="bookLink" th:attr="isbn=${book.isbn}" href="#" th:inline="text">[[${book.title}]]</a></td>
+                <td th:text="${book.authors}"></td>
+                <td th:text="${book.publisher}"></td>
+                <td th:text="${book.isNullDateTime() == true} ? '' : ${#calendars.format(book.datetime, 'YYYY-MM-dd')}"></td>
+                <td th:if="${book.saleStatus.isSale()}" th:text="${#numbers.formatInteger(book.salePrice, 3, 'COMMA')} + '원'"></td>
+                <td th:unless="${book.saleStatus.isSale()}" th:text="${'가격확인 중'}"></td>
+                <td><a class="btn btn-small bookMarkLink"
+                       th:attr="url=@{'/bookmark/' + ${apiType.code} (page='1',
+                    size='1',
+                    query=${book.isbn},
+                    target=${apiType.code == 'kakao'} ? 'isbn' : 'd_isbn',
+                    category='ALL',
+                    sort=
+                    )},
+                       title=${book.title}, isbn=${book.isbn}" sec:authorize="isAuthenticated()"><i class="icon-bookmark"></i></a></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="pagination pagination-centered">
+            <ul>
+                <li th:if="${pagingInfo.isPreviousVisible()}"><a th:href="${pagingInfo.startPage} - 1">&laquo;</a></li>
+                <li th:classappend="${p.isCurrentPage()} ? 'active' : '' " th:each="p:${pagingInfo.getPageElements()}">
+                    <a th:href="${p.pageNumber}" th:text="${p.pageNumber}"></a></li>
+                <li th:if="${pagingInfo.isNextVisible()}"><a th:href="${pagingInfo.endPage} + 1">&raquo;</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <form id='searchForm' th:action="@{'/search/' + ${apiType.code}}" method="get">
+        <input type='hidden' name='page' th:value="${searchOption.page}" />
+        <input type='hidden' name='size' th:value="${searchOption.size}" />
+        <input type='hidden' name='target' th:value="${searchOption.target}"/>
+        <input type='hidden' name='query' th:value="${searchOption.query}"/>
+        <input type='hidden' name='category' th:value="${searchOption.category}"/>
+        <input type='hidden' name='sort' th:value="${searchOption.sort}"/>
+    </form>
+</div>
+</body>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            var searchForm = $("#searchForm");
+
+            $("#searchBtn").click(function (e) {
+                e.preventDefault();
+                var target = $("#target").find(":selected").val();
+                var query = $("#query").val();
+                var category = $("#category").find(":selected").val();
+                var sort = $("#sort").find(":selected").val();
+                searchForm.find("[name='target']").val(target);
+                searchForm.find("[name='query']").val(query);
+                searchForm.find("[name='category']").val(category);
+                searchForm.find("[name='sort']").val(sort);
+                searchForm.find("[name='page']").val("1");
+                searchForm.submit();
+            });
+
+            $("#searchBtn").keypress(function(e) {
+                if (e.which == 13) {
+                    $("#searchBtn").trigger("click");
+                }
+            });
+
+            $(".pagination a").click(function(e) {
+                e.preventDefault();
+                searchForm.find('[name="page"]').val($(this).attr('href'));
+                searchForm.submit();
+            });
+
+            $(".bookLink").click(function(e){
+                e.preventDefault();
+                var isbn = $(this).attr("isbn");
+                if (isbn == 'NOT_EXISTS_ISBN') {
+                    alert('isbn정보가 없는 도서는 상세정보를 볼 수 없습니다.');
+                    return;
+                }
+
+                searchForm.attr('action', '/book/' + $('#apiType').val());
+                var prevPage = searchForm.find("[name='page']").val();
+                var prevSize = searchForm.find("[name='size']").val();
+                var prevTarget = searchForm.find("[name='target']").val();
+                var prevQuery = searchForm.find("[name='query']").val();
+                var prevCategory = searchForm.find("[name='category']").val();
+                var prevSort = searchForm.find("[name='sort']").val();
+                searchForm.append('<input type="hidden" name="prevPage" value="' + prevPage + '"/>');
+                searchForm.append('<input type="hidden" name="prevSize" value="' + prevSize + '"/>');
+                searchForm.append('<input type="hidden" name="prevTarget" value="' + prevTarget + '"/>');
+                searchForm.append('<input type="hidden" name="prevQuery" value="' + prevQuery +'"/>');
+                searchForm.append('<input type="hidden" name="prevCategory" value="' + prevCategory + '"/>');
+                searchForm.append('<input type="hidden" name="prevSort" value="' + prevSort +'"/>');
+                var isbnParam = $('#apiType').val() == 'kakao' ? 'isbn' : 'd_isbn';
+                searchForm.find('[name="target"]').val(isbnParam);
+                searchForm.find('[name="query"]').val(isbn);
+                searchForm.find('[name="page"]').val(1);
+                searchForm.find('[name="size"]').val(1);
+                searchForm.find('[name="category"]').val('ALL');
+                searchForm.submit();
+            });
+
+            $(".bookMarkLink").click(function(e){
+                e.preventDefault();
+                var bookmark = {
+                    isbn: $(this).attr("isbn"),
+                    title: $(this).attr("title"),
+                    apiType: $('#apiType').val(),
+                    url: $(this).attr('url')
+                };
+
+                if (bookmark.isbn == 'NOT_EXISTS_ISBN') {
+                    alert('isbn정보가 없는 도서는 북마크가 불가합니다.');
+                    return;
+                }
+
+                if (!confirm("북마크를 등록하시겠습니까?")) {
+                    return;
+                }
+
+                $.ajax({
+                    type: "GET",
+                    url: "/api/bookmarks/" + bookmark.isbn,
+                    dataType: "json",
+                    contentType: 'application/x-www-form-urlencoded',
+                    data: "apiType=" + $('#apiType').val(),
+                    success: function (result) {
+                        if (result.message == "exist") {
+                            alert(result.error);
+                            return;
+                        } else {
+                            addBookMark(bookmark);
+                        }
+                    },
+                    error: function(xhr) {
+                        console.log(xhr);
+                    }
+                });
+            });
+
+            function addBookMark(bookmark) {
+                $.ajax({
+                    type: "POST",
+                    url: "/api/bookmarks",
+                    data: JSON.stringify(bookmark),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success: function(result) {
+                        if (result.message == "success") {
+                            alert('북마크가 저장되었습니다.');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.log(xhr)
+                    }
+                });
+            }
+        });
+    </script>
+</th:block>
+
+</html>

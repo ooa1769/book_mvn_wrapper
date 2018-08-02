@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+      layout:decorator="layout">
+<head>
+    <title>회원가입</title>
+</head>
+<body>
+<h2 layout:fragment="header">로그인</h2>
+<div layout:fragment="content" class="container">
+    <div class="container">
+        <div th:if="${param.error}" class="alert alert-danger">Invalid email and password.</div>
+        <form class="form-horizontal" th:action="@{/doLogin}" method="post">
+            <div class="control-group">
+                <label class="control-label" for="username">Email</label>
+                <div class="controls">
+                    <input id="username" type="text" name="username" />
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="password">Password</label>
+                <div class="controls">
+                    <input id="password" type="password" name="password" />
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <input type="submit" class="btn btn-primary" value="로그인"/>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+
+        });
+    </script>
+</th:block>
+</html>
