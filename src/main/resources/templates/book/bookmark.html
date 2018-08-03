@@ -38,7 +38,7 @@
                 <td th:text="${bookmark.isbn}"></td>
                 <td><a class="bookLink" th:attr="url=${bookmark.url}" href="#" th:inline="text">[[${bookmark.title}]]</a></td>
                 <td th:text="${bookmark.formattedCreateDate}"></td>
-                <td><a class="btn btn-small bookMarkLink" th:attr="id=${bookmark.id}"><i class="icon-remove-circle"></i> 삭제</a></td>
+                <td><a class="btn btn-small bookMarkLink" th:attr="id=${bookmark.id}"><i class="icon-remove-circle"></i></a></td>
             </tr>
             </tbody>
         </table>

@@ -102,7 +102,7 @@ public class NaverBookSearchClient implements BookSearchClient {
                 .authors(item.toAuthors())
                 .publisher(item.getPublisher())
                 .price(item.toPrice())
-                .thumbnail(item.getImage())
+                .thumbnail(item.toImage())
                 .saleStatus(item.toSaleStatus())
                 .build();
     }
@@ -159,6 +159,10 @@ public class NaverBookSearchClient implements BookSearchClient {
             String replaceTag(String item) {
                 return item.replace("<b>", "")
                         .replace("</b>", "");
+            }
+
+            String toImage() {
+                return StringUtils.isEmpty(image) ? "http://i1.daumcdn.net/img-contents/book/2010/72x100_v2.gif" : image;
             }
         }
     }

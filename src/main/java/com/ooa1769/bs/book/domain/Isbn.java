@@ -2,6 +2,7 @@ package com.ooa1769.bs.book.domain;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.Embeddable;
 
@@ -37,6 +38,10 @@ public class Isbn {
     }
 
     public static Isbn createIsbnByApi(String isbn) {
+        if (StringUtils.isEmpty(isbn)) {
+            return NOT_EXISTS_ISBN;
+        }
+
         String[] isbns = isbn.split(" ");
 
         if (isbns.length == 0) {
